@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Global Knowledge Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    header {
+      background: #fff;
+      padding: 16px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      position: sticky;
+      top: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    section {
+      background: #fff;
+      margin: 16px;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .item {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .item:last-child {
+      border-bottom: none;
+    }
+
+    a {
+      text-decoration: none;
+      color: #1a73e8;
+      font-weight: bold;
+    }
+
+    small {
+      display: block;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .loading {
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌍 Global Knowledge Engine</h1>
+  <small>News • Books • Universities • Languages</small>
+</header>
+
+<section>
+  <h2>📰 News (India)</h2>
+  <div id="news" class="loading">Loading news...</div>
+</section>
+
+<section>
+  <h2>📚 Books (Business)</h2>
+  <div id="books" class="loading">Loading books...</div>
+</section>
+
+<section>
+  <h2>🎓 Universities (Research)</h2>
+  <div id="universities" class="loading">Loading university research...</div>
+</section>
+
+<section>
+  <h2>🌍 Languages</h2>
+  <div id="languages" class="loading">Loading language hubs...</div>
+</section>
+
+<script>
+  const WORKER = "https://sajan.darmindark691.workers.dev";
+
+  async function load(endpoint, boxId, render) {
+    try {
+      const res = await fetch(WORKER + endpoint);
+      const data = await res.json();
+      render(data);
+    } catch {
+      document.getElementById(boxId).innerHTML = "❌ Error loading data";
+    }
+  }
+
+  /* 📰 NEWS */
+  load("/news?country=india", "news", data => {
+    const box = document.getElementById("news");
+    box.innerHTML = "";
+    data.results.slice(0,10).forEach(n => {
+      box.innerHTML += `
+        <div class="item">
+          <a href="${n.url}" target="_blank">${n.title}</a>
+          <small>Source: ${n.source}</small>
+        </div>
+      `;
+    });
+  });
+
+  /* 📚 BOOKS */
+  load("/books?topic=business", "books", data => {
+    const box = document.getElementById("books");
+    box.innerHTML = "";
+    data.results.slice(0,10).forEach(b => {
+      box.innerHTML += `
+        <div class="item">
+          ${b.pdf ? `<a href="${b.pdf}" target="_blank">${b.title}</a>` : `<b>${b.title}</b>`}
+          <small>Hub: ${b.hub || b.source}</small>
+        </div>
+      `;
+    });
+  });
+
+  /* 🎓 UNIVERSITIES */
+  load("/universities", "universities", data => {
+    const box = document.getElementById("universities");
+    box.innerHTML = "";
+    data.results.forEach(u => {
+      box.innerHTML += `
+        <div class="item">
+          <b>${u.university}</b>
+          <small>${u.repository}</small>
+        </div>
+      `;
+    });
+  });
+
+  /* 🌍 LANGUAGES */
+  load("/languages", "languages", data => {
+    const box = document.getElementById("languages");
+    box.innerHTML = "";
+    data.hubs.forEach(l => {
+      box.innerHTML += `
+        <div class="item">
+          <a href="${l.link}" target="_blank">${l.name}</a>
+        </div>
+      `;
+    });
+  });
+</script>
+
+</body>
+</html>
