@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Global Data Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial; background:#f4f4f4; padding:20px; }
+    h1 { text-align:center; }
+    .card {
+      background:#fff;
+      padding:12px;
+      margin:10px 0;
+      border-radius:6px;
+      box-shadow:0 2px 4px rgba(0,0,0,.1);
+    }
+    a { color:#0a66c2; text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<h1>🌍 Common Crawl – Global Web Data</h1>
+<p style="text-align:center">GitHub Pages • No API • Free</p>
+
+<div id="results">Loading…</div>
+
+<script>
+const PROXY = "https://cors.isomorphic-git.org/";
+const CC_URL =
+  "https://index.commoncrawl.org/CC-MAIN-2024-10-index" +
+  "?url=education*&output=json";
+
+fetch(PROXY + CC_URL)
+  .then(res => res.text())
+  .then(text => {
+    const lines = text.trim().split('\n').slice(0, 20);
+    const box = document.getElementById('results');
+    box.innerHTML = '';
+
+    lines.forEach(line => {
+      const item = JSON.parse(line);
+      box.innerHTML += `
+        <div class="card">
+          <b>${item.url}</b><br>
+          <small>Crawled: ${item.timestamp}</small><br>
+          <a href="${item.url}" target="_blank">Open Source Page</a>
+        </div>
+      `;
+    });
+  })
+  .catch(() => {
+    document.getElementById('results').innerText =
+      "Unable to load data (proxy blocked). Try again later.";
+  });
+</script>
+
+</body>
+</html>
