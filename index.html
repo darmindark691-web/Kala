@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Global Data Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .card {
+      background: #ffffff;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    a {
+      color: #0a66c2;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    small {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🌍 Global Web Data (Common Crawl)</h1>
+<p style="text-align:center">
+  Data source: Common Crawl (server-side fetch via GitHub Actions)
+</p>
+
+<div id="results">Loading data…</div>
+
+<script>
+fetch('data/commoncrawl.json')
+  .then(response => response.text())
+  .then(text => {
+    const lines = text.trim().split('\n');
+    const box = document.getElementById('results');
+    box.innerHTML = '';
+
+    if (lines.length === 0) {
+      box.innerHTML = 'No data available.';
+      return;
+    }
+
+    lines.forEach(line => {
+      const item = JSON.parse(line);
+      box.innerHTML += `
+        <div class="card">
+          <a href="${item.url}" target="_blank">${item.url}</a><br>
+          <small>Crawled at: ${item.timestamp}</small>
+        </div>
+      `;
+    });
+  })
+  .catch(err => {
+    document.getElementById('results').innerText =
+      'Data load failed. Check if data/commoncrawl.json exists.';
+  });
+</script>
+
+</body>
+</html>
