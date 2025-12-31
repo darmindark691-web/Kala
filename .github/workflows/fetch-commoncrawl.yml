@@ -1,0 +1,28 @@
+name: Fetch Common Crawl
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */24 * * *"
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create data folder
+        run: mkdir -p data
+
+      - name: Fetch Common Crawl index (education)
+        run: |
+          curl -L "https://index.commoncrawl.org/CC-MAIN-2024-10-index?url=education*&output=json" \
+          | head -n 50 > data/commoncrawl.json
+
+      - name: Commit data
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/commoncrawl.json
+          git commit -m "update common crawl data" || echo "no changes"
+          git push
