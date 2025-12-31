@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Global Data Engine</title>
+  <style>
+    body { font-family: Arial; padding:20px; background:#f4f4f4; }
+    .card { background:#fff; padding:10px; margin:10px 0; }
+    a { color:#0066cc; text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<h1>🌍 Common Crawl – Global Web Data</h1>
+<p>(No API • No GitHub • Direct)</p>
+
+<div id="results">Loading…</div>
+
+<script>
+const url =
+  "https://index.commoncrawl.org/CC-MAIN-2024-10-index" +
+  "?url=education*&output=json";
+
+fetch(url)
+  .then(res => res.text())
+  .then(text => {
+    const lines = text.trim().split('\n').slice(0, 20);
+    const box = document.getElementById('results');
+    box.innerHTML = '';
+
+    lines.forEach(line => {
+      const item = JSON.parse(line);
+      box.innerHTML += `
+        <div class="card">
+          <b>${item.url}</b><br>
+          <small>Crawled: ${item.timestamp}</small><br>
+          <a href="${item.url}" target="_blank">Open Source Page</a>
+        </div>
+      `;
+    });
+  })
+  .catch(err => {
+    document.getElementById('results').innerText =
+      "Browser blocked request (CORS limit)";
+  });
+</script>
+
+</body>
+</html>
