@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BharatVerse Social</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#fafafa;
+}
+
+.header{
+  text-align:center;
+  padding:14px;
+  font-size:22px;
+  font-weight:600;
+  border-bottom:1px solid #ddd;
+  background:#fff;
+}
+
+.container{max-width:480px;margin:auto;padding:12px}
+
+.card{
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08)
+}
+
+textarea,input{
+  width:100%;
+  border:1px solid #ccc;
+  border-radius:10px;
+  padding:10px;
+  margin-top:8px;
+  font-size:15px;
+}
+
+button{
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#0095f6;
+  color:white;
+  font-size:16px;
+}
+
+.preview img{
+  width:100%;
+  border-radius:12px;
+  margin-top:10px;
+}
+
+.post{
+  border-top:1px solid #eee;
+  padding-top:10px;
+  margin-top:10px;
+}
+
+.post img{
+  width:100%;
+  border-radius:12px;
+  margin-top:8px;
+}
+
+.small{color:#777;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<div class="header">🇮🇳 BharatVerse</div>
+
+<div class="container">
+
+<!-- CREATE POST -->
+<div class="card">
+  <textarea id="text" placeholder="What's on your mind?"></textarea>
+  <input type="file" id="image" accept="image/*">
+  <div class="preview" id="preview"></div>
+  <button onclick="publish()">Post</button>
+</div>
+
+<!-- FEED -->
+<div class="card">
+  <button onclick="loadFeed()">Refresh Feed</button>
+  <div id="feed"></div>
+</div>
+
+</div>
+
+<script>
+let DID = localStorage.getItem("did");
+if(!DID){
+  DID = "did:bharat:" + crypto.randomUUID();
+  localStorage.setItem("did",DID);
+}
+
+/* IMAGE PREVIEW */
+document.getElementById("image").addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  preview.innerHTML = `<img src="${url}">`;
+});
+
+/* UPLOAD TO IPFS */
+async function uploadIPFS(file){
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("https://ipfs.io/api/v0/add",{
+    method:"POST",
+    body:form
+  });
+
+  const txt = await res.text();
+  const cid = txt.match(/"Hash":"(.*?)"/)[1];
+  return cid;
+}
+
+/* PUBLISH POST */
+async function publish(){
+  const text = document.getElementById("text").value;
+  const file = document.getElementById("image").files[0];
+
+  let imageCID = "";
+  if(file){
+    imageCID = await uploadIPFS(file);
+  }
+
+  const post = {
+    did:DID,
+    text:text,
+    image:imageCID,
+    time:new Date().toLocaleString()
+  };
+
+  const blob = new Blob([JSON.stringify(post)],{type:"application/json"});
+  const postCID = await uploadIPFS(blob);
+
+  let posts = JSON.parse(localStorage.getItem("posts")||"[]");
+  posts.unshift(postCID);
+  localStorage.setItem("posts",JSON.stringify(posts));
+
+  document.getElementById("text").value="";
+  document.getElementById("image").value="";
+  preview.innerHTML="";
+
+  loadFeed();
+}
+
+/* LOAD FEED */
+async function loadFeed(){
+  feed.innerHTML="";
+  const posts = JSON.parse(localStorage.getItem("posts")||"[]");
+
+  for(const cid of posts){
+    try{
+      const r = await fetch("https://ipfs.io/ipfs/"+cid);
+      const p = await r.json();
+
+      feed.innerHTML += `
+      <div class="post">
+        <b>User</b>
+        <div class="small">${p.time}</div>
+        <div>${p.text}</div>
+        ${p.image ? `<img src="https://ipfs.io/ipfs/${p.image}">` : ""}
+      </div>`;
+    }catch{}
+  }
+}
+</script>
+
+</body>
+</html>
