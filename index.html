@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Decentralized Post System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{font-family:system-ui;background:#f6f7f9;padding:20px}
+.box{max-width:500px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+button{padding:10px 16px;margin-top:10px}
+img,video{max-width:100%;margin-top:10px;border-radius:10px}
+.cid{font-size:12px;color:#555;word-break:break-all}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>📤 Create Post (IPFS)</h2>
+
+  <input type="file" id="file"><br>
+  <button onclick="upload()">Publish</button>
+
+  <div id="result"></div>
+</div>
+
+<script type="module">
+import { createHelia } from "https://unpkg.com/helia@3.0.1/dist/index.min.js";
+import { unixfs } from "https://unpkg.com/@helia/unixfs@1.4.2/dist/index.min.js";
+
+let helia, fs;
+
+async function init() {
+  helia = await createHelia();
+  fs = unixfs(helia);
+
+  console.log("IPFS ready");
+}
+
+init();
+
+window.upload = async () => {
+  const file = document.getElementById("file").files[0];
+  if (!file) return alert("Select file");
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  const cid = await fs.addBytes(bytes);
+
+  const url1 = `https://ipfs.io/ipfs/${cid}`;
+  const url2 = `https://cloudflare-ipfs.com/ipfs/${cid}`;
+  const url3 = `https://dweb.link/ipfs/${cid}`;
+
+  document.getElementById("result").innerHTML = `
+    <p><b>Stored on IPFS</b></p>
+    <div class="cid">${cid}</div>
+
+    ${file.type.startsWith("image") ? `<img src="${url1}">` : ""}
+    ${file.type.startsWith("video") ? `<video controls src="${url1}"></video>` : ""}
+
+    <p>Gateways:</p>
+    <a target="_blank" href="${url1}">ipfs.io</a><br>
+    <a target="_blank" href="${url2}">cloudflare</a><br>
+    <a target="_blank" href="${url3}">dweb.link</a>
+  `;
+};
+</script>
+
+</body>
+</html>
