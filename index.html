@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BharatVerse — Decentralized Social</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{font-family:system-ui;background:#f5f7fb;margin:0;padding:20px}
+.box{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+input,textarea,button{width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc}
+button{background:#1a73e8;color:#fff;border:none}
+.post{margin-top:12px;border-top:1px solid #eee;padding-top:12px}
+.post img{width:100%;border-radius:12px;margin-top:8px}
+.small{color:#666;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<h2>🇮🇳 BharatVerse (Decentralized)</h2>
+
+<div class="box">
+<b>1️⃣ Identity</b>
+<button onclick="genID()">Generate Identity</button>
+<div id="did"></div>
+</div>
+
+<div class="box">
+<b>2️⃣ Profile</b>
+<input id="name" placeholder="Your name">
+<textarea id="bio" placeholder="Bio"></textarea>
+<button onclick="saveProfile()">Save Profile</button>
+</div>
+
+<div class="box">
+<b>3️⃣ Create Post</b>
+<textarea id="text" placeholder="Write something..."></textarea>
+<input type="file" id="image">
+<button onclick="publish()">Publish</button>
+</div>
+
+<div class="box">
+<b>4️⃣ Feed</b>
+<button onclick="loadFeed()">Refresh Feed</button>
+<div id="feed"></div>
+</div>
+
+<script>
+let DID = localStorage.getItem("did");
+
+function genID(){
+  DID = "did:bharat:" + crypto.randomUUID();
+  localStorage.setItem("did", DID);
+  document.getElementById("did").innerText = DID;
+}
+document.getElementById("did").innerText = DID || "";
+
+function saveProfile(){
+  localStorage.setItem("profile", JSON.stringify({
+    name: name.value,
+    bio: bio.value
+  }));
+}
+
+async function uploadIPFS(file){
+  const form = new FormData();
+  form.append("file", file);
+
+  const r = await fetch("https://ipfs.io/api/v0/add", {
+    method:"POST",
+    body: form
+  });
+
+  const t = await r.text();
+  const hash = t.match(/"Hash":"(.*?)"/)[1];
+  return hash;
+}
+
+async function publish(){
+  if(!DID){ alert("Generate identity first"); return; }
+
+  const profile = JSON.parse(localStorage.getItem("profile")||"{}");
+  const file = document.getElementById("image").files[0];
+
+  let imageCID = "";
+  if(file){
+    imageCID = await uploadIPFS(file);
+  }
+
+  const post = {
+    did: DID,
+    name: profile.name || "Anonymous",
+    text: text.value,
+    image: imageCID,
+    time: new Date().toLocaleString()
+  };
+
+  const blob = new Blob([JSON.stringify(post)], {type:"application/json"});
+  const postCID = await uploadIPFS(blob);
+
+  let index = JSON.parse(localStorage.getItem("posts")||"[]");
+  index.unshift(postCID);
+  localStorage.setItem("posts", JSON.stringify(index));
+
+  text.value="";
+  image.value="";
+  loadFeed();
+}
+
+async function loadFeed(){
+  feed.innerHTML = "";
+  const index = JSON.parse(localStorage.getItem("posts")||"[]");
+
+  for(const cid of index){
+    try{
+      const r = await fetch("https://ipfs.io/ipfs/"+cid);
+      const p = await r.json();
+
+      feed.innerHTML += `
+      <div class="post">
+        <b>${p.name}</b>
+        <div class="small">${p.time}</div>
+        <div>${p.text}</div>
+        ${p.image ? `<img src="https://ipfs.io/ipfs/${p.image}">` : ""}
+      </div>`;
+    }catch{}
+  }
+}
+</script>
+
+</body>
+</html>
