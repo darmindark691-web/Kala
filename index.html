@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BharatVerse – Decentralized Social</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{font-family:system-ui;background:#f2f4f8;padding:20px}
+.box{background:#fff;padding:16px;border-radius:14px;margin-bottom:18px;
+box-shadow:0 6px 20px rgba(0,0,0,.08)}
+button{background:#1a73e8;color:#fff;border:none;padding:10px;border-radius:8px;width:100%}
+textarea,input{width:100%;padding:10px;margin-top:8px;border-radius:8px;border:1px solid #ccc}
+.post{border-top:1px solid #eee;padding-top:12px;margin-top:12px}
+img{width:100%;border-radius:12px;margin-top:6px}
+.small{font-size:12px;color:#666}
+</style>
+</head>
+
+<body>
+
+<h2>🇮🇳 BharatVerse (Permanent IPFS)</h2>
+
+<div class="box">
+<b>Identity</b>
+<button onclick="genID()">Generate Identity</button>
+<div id="did"></div>
+</div>
+
+<div class="box">
+<b>Create Post</b>
+<textarea id="text" placeholder="Write something..."></textarea>
+<input type="file" id="image">
+<button onclick="publish()">Publish</button>
+</div>
+
+<div class="box">
+<b>Feed</b>
+<button onclick="loadFeed()">Refresh Feed</button>
+<div id="feed"></div>
+</div>
+
+<script>
+const GATEWAYS = [
+  "https://ipfs.io/ipfs/",
+  "https://cloudflare-ipfs.com/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/"
+];
+
+let DID = localStorage.getItem("did");
+
+function genID(){
+  DID = "did:bharat:" + crypto.randomUUID();
+  localStorage.setItem("did", DID);
+  did.innerText = DID;
+}
+did.innerText = DID || "";
+
+async function uploadToIPFS(file){
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("https://api.nft.storage/upload",{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer c35396b3.fe263b259c224980a6424d772cdc921e
+"
+    },
+    body:form
+  });
+
+  const json = await res.json();
+  return json.value.cid;
+}
+
+async function publish(){
+  if(!DID){ alert("Generate identity first"); return; }
+
+  let imgCID = null;
+  if(image.files[0]){
+    imgCID = await uploadToIPFS(image.files[0]);
+  }
+
+  const post = {
+    did: DID,
+    text: text.value,
+    image: imgCID,
+    time: new Date().toISOString()
+  };
+
+  let posts = JSON.parse(localStorage.getItem("posts")||"[]");
+  posts.unshift(post);
+  localStorage.setItem("posts", JSON.stringify(posts));
+
+  text.value="";
+  image.value="";
+  loadFeed();
+}
+
+function loadFeed(){
+  feed.innerHTML="";
+  const posts = JSON.parse(localStorage.getItem("posts")||"[]");
+
+  posts.forEach(p=>{
+    const img = p.image
+      ? `<img src="${GATEWAYS[0]+p.image}">`
+      : "";
+
+    feed.innerHTML += `
+      <div class="post">
+        <div class="small">${p.did}</div>
+        <div>${p.text}</div>
+        ${img}
+      </div>`;
+  });
+}
+
+loadFeed();
+</script>
+
+</body>
+</html>
