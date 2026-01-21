@@ -1,0 +1,14 @@
+public class IPFSService {
+
+    static IPFS ipfs = new IPFS("/ip4/127.0.0.1/tcp/5001");
+
+    public static String addText(String text) {
+        NamedStreamable.ByteArrayWrapper file =
+            new NamedStreamable.ByteArrayWrapper(
+                "post.txt", text.getBytes()
+            );
+
+        MerkleNode node = ipfs.add(file).get(0);
+        return node.hash.toBase58();
+    }
+}
