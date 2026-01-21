@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Global Feed</title>
+<style>
+body{font-family:sans-serif;background:#f2f2f2}
+.post{background:#fff;margin:10px;padding:10px;border-radius:8px}
+img{max-width:100%;border-radius:6px}
+</style>
+</head>
+
+<body>
+
+<h2>📸 Global Feed</h2>
+
+<input type="file" id="img"><br><br>
+<textarea id="text" placeholder="Write something..."></textarea><br><br>
+<button onclick="publish()">Publish</button>
+
+<hr>
+
+<div id="feed"></div>
+
+<script>
+const WORKER = "dark-hall-be40.darmindark691.workers.dev";
+const FEED_URL =
+"https://raw.githubusercontent.com/YOURUSERNAME/global-feed/main/feed.json";
+
+async function publish(){
+  const file = document.getElementById("img").files[0];
+  const text = document.getElementById("text").value;
+
+  if(!file) return alert("image select karo");
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  // upload image to IPFS
+  const r = await fetch(WORKER,{method:"POST",body:fd});
+  const j = await r.json();
+
+  const cid = j.Hash;
+
+  const post = {
+    text,
+    img:"https://ipfs.io/ipfs/"+cid,
+    time:Date.now()
+  };
+
+  // save post locally
+  let local = JSON.parse(localStorage.getItem("posts")||"[]");
+  local.unshift(post);
+  localStorage.setItem("posts",JSON.stringify(local));
+
+  alert("Published");
+  load();
+}
+
+function load(){
+  let local = JSON.parse(localStorage.getItem("posts")||"[]");
+  const feed = document.getElementById("feed");
+  feed.innerHTML="";
+
+  local.forEach(p=>{
+    feed.innerHTML += `
+      <div class="post">
+        <img src="${p.img}">
+        <p>${p.text}</p>
+      </div>`;
+  });
+}
+
+load();
+</script>
+
+</body>
+</html>
