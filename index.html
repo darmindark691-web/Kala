@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BharatVerse IPFS Post</title>
+
+<style>
+body{font-family:system-ui;background:#f4f6fb;padding:20px}
+.card{background:#fff;padding:16px;border-radius:14px;margin-bottom:20px;
+box-shadow:0 6px 18px rgba(0,0,0,.08)}
+textarea,input,button{width:100%;padding:10px;margin-top:10px;
+border-radius:8px;border:1px solid #ccc}
+button{background:#1a73e8;color:#fff;border:none;font-size:16px}
+.post{margin-top:15px}
+.post img{width:100%;border-radius:12px;margin-top:8px}
+.time{font-size:12px;color:#777}
+</style>
+</head>
+
+<body>
+
+<h2>🇮🇳 BharatVerse IPFS Feed</h2>
+
+<div class="card">
+<h3>Create Post</h3>
+<textarea id="text" placeholder="Write something..."></textarea>
+<input type="file" id="file">
+<button onclick="publish()">Publish</button>
+</div>
+
+<div class="card">
+<h3>Feed</h3>
+<div id="feed"></div>
+</div>
+
+<script>
+/* ===============================
+   CONFIG
+================================ */
+
+const NFT_STORAGE_KEY = "PASTE_YOUR_API_KEY_HERE";
+
+/* ===============================
+   LOCAL INDEX
+================================ */
+
+function getPosts(){
+  return JSON.parse(localStorage.getItem("posts") || "[]");
+}
+
+function savePosts(p){
+  localStorage.setItem("posts", JSON.stringify(p));
+}
+
+/* ===============================
+   IPFS UPLOAD
+================================ */
+
+async function uploadToIPFS(file){
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("https://api.nft.storage/upload", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + NFT_STORAGE_KEY
+    },
+    body: form
+  });
+
+  const data = await res.json();
+
+  if(!data.ok){
+    alert("Upload failed");
+    throw new Error("IPFS error");
+  }
+
+  return data.value.cid;
+}
+
+/* ===============================
+   PUBLISH POST
+================================ */
+
+async function publish(){
+  const text = document.getElementById("text").value.trim();
+  const file = document.getElementById("file").files[0];
+
+  if(!text && !file){
+    alert("Write something or select image");
+    return;
+  }
+
+  let cid = null;
+
+  if(file){
+    cid = await uploadToIPFS(file);
+  }
+
+  const posts = getPosts();
+  posts.unshift({
+    text,
+    cid,
+    time: new Date().toLocaleString()
+  });
+
+  savePosts(posts);
+
+  document.getElementById("text").value="";
+  document.getElementById("file").value="";
+
+  render();
+}
+
+/* ===============================
+   RENDER FEED
+================================ */
+
+function render(){
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  getPosts().forEach(p=>{
+    feed.innerHTML += `
+      <div class="post">
+        <div>${p.text || ""}</div>
+        ${p.cid ? `<img src="https://ipfs.io/ipfs/${p.cid}">` : ""}
+        <div class="time">${p.time}</div>
+      </div>
+    `;
+  });
+}
+
+render();
+</script>
+
+</body>
+</html>
