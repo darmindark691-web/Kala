@@ -1,0 +1,24 @@
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  padding: 20px;
+}
+
+form {
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 8px 15px;
+  background: black;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#feed img {
+  width: 100%;
+  max-width: 300px;
+  margin: 10px 0;
+  border-radius: 10px;
+}
